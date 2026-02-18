@@ -1,0 +1,29 @@
+./scripts/dev.sh
+== Dev runner ==
+Python: Python 3.9.6
+Using:  /usr/bin/python3
+Imports OK: flask, reportlab, openai
+Starting Flask on http://127.0.0.1:8000
+ * Serving Flask app 'app'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:8000
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 186-182-628
+127.0.0.1 - - [17/Feb/2026 14:05:09] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [17/Feb/2026 14:05:09] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [17/Feb/2026 14:05:09] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [17/Feb/2026 14:05:17] "POST /iso HTTP/1.1" 200 -
+127.0.0.1 - - [17/Feb/2026 14:05:22] "POST /iso HTTP/1.1" 200 -
+127.0.0.1 - - [17/Feb/2026 14:05:25] "POST /iso HTTP/1.1" 200 -
+127.0.0.1 - - [17/Feb/2026 14:05:30] "POST /iso HTTP/1.1" 200 -
+127.0.0.1 - - [17/Feb/2026 14:05:36] "POST /iso HTTP/1.1" 200 -
+ * Detected change in '/Users/dennisschetters/ai_agent/agent.py', reloading
+ * Restarting with stat
+Traceback (most recent call last):
+  File "/Users/dennisschetters/ai_agent/app.py", line 3, in <module>
+    from agent import ISOLeadAgent
+ImportError: cannot import name 'ISOLeadAgent' from 'agent' (/Users/dennisschetters/ai_agent/agent.py)
+make: *** [run] Error 1

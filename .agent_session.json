@@ -1,0 +1,28 @@
+{
+  "history": [
+    {
+      "timestamp": "2026-02-17T14:05:09",
+      "goal": "Start server and run smoke tests",
+      "command": "make run (background)",
+      "exit_code": 0,
+      "stdout_preview": "Started server in background (pid=7233). Healthcheck: OK",
+      "stderr_preview": ""
+    },
+    {
+      "timestamp": "2026-02-17T14:05:09",
+      "goal": "Start server and run smoke tests",
+      "command": "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/",
+      "exit_code": 0,
+      "stdout_preview": "200",
+      "stderr_preview": ""
+    },
+    {
+      "timestamp": "2026-02-17T14:05:36",
+      "goal": "Start server and run smoke tests",
+      "command": "python3 scripts/smoke_test.py",
+      "exit_code": 0,
+      "stdout_preview": "== Smoke test ==\nChecking server...\n\n--- T1 Enterprise ISO27001 hard deadline + budget ---\nscore: 9 | iso: ISO 27001 | kans: Hoog | conf: 100\n\n--- T2 MKB oriënterend ---\nscore: 0 | iso: Niet expliciet benoemd | kans: Laag | conf: 0\n\n--- T3 Multi-norm + aanbesteding ---\nscore: 10 | iso: ISO 27001, ISO 9001 | kans: Hoog | conf: 100\n\n--- T4 Keyword noise / edge case ---\nscore: 4 | iso: Niet expliciet benoemd | kans: Laag | conf: 60\n\n--- T5 Extreme enterprise ---\nscore: 8 | iso: ISO 27001, ISO 9001, ISO 14001 | kans: Hoog | conf: 100\n\n== Result ==\nALL TESTS PASSED ✅",
+      "stderr_preview": "/Users/dennisschetters/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020\n  warnings.warn("
+    }
+  ]
+}
