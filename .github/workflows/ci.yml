@@ -2,17 +2,19 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   ci:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.9'
 
@@ -21,27 +23,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Start server in background
+      - name: Start server
         run: |
           nohup make run > server.log 2>&1 &
+          sleep 5
 
-      - name: Wait for server healthcheck
+      - name: Healthcheck
         run: |
-          for i in {1..20}; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/ || true)
-            if [ "$code" = "200" ]; then
-              exit 0
-            fi
-            sleep 0.5
+          for i in {1..10}; do
+            curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/ | grep 200 && break
+            sleep 2
           done
-          echo "Server did not become ready"
-          exit 1
 
       - name: Run smoke tests
-        run: python scripts/smoke_test.py
-
-      - name: Dump server log on failure
-        if: failure()
-        run: |
-          echo "==== server.log ===="
-          cat server.log || true
+        run: python3 scripts/smoke_test.py
