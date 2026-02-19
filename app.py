@@ -1,33 +1,39 @@
-from flask import Flask, request, jsonify, render_template, send_file
+import os
 import sqlite3
-import uuid
-from datetime import datetime
-from io import BytesIO
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet
+from flask import Flask, request, jsonify, render_template
+from agent import analyse_lead
 
-DB_FILE = "leads.db"
+app = Flask(__name__)
 
-app = Flask(__name__, template_folder="templates")
+DB_NAME = "leads.db"
 
 
-# ================= DATABASE =================
-
+# -----------------------------
+# Database init + optimization
+# -----------------------------
 def init_db():
-    conn = sqlite3.connect(DB_FILE)
+    conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
+
+    # Main table
     c.execute("""
         CREATE TABLE IF NOT EXISTS leads (
-            id TEXT PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            reference_id TEXT UNIQUE,
             created_at TEXT,
-            samenvatting TEXT,
             iso_norm TEXT,
             lead_score INTEGER,
             commerciele_kans TEXT,
             confidence INTEGER,
+            samenvatting TEXT,
             aanbevolen_actie TEXT
         )
     """)
+
+    # Performance indexes
+    c.execute("CREATE INDEX IF NOT EXISTS idx_created_at ON leads(created_at)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_lead_score ON leads(lead_score)")
+
     conn.commit()
     conn.close()
 
@@ -35,73 +41,29 @@ def init_db():
 init_db()
 
 
-# ================= SCORING ENGINE =================
+# -----------------------------
+# Utility: Cleanup old leads
+# -----------------------------
+def cleanup_old_leads(limit=100):
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
 
-def score_lead(text: str):
-    text_lower = text.lower()
-    score = 0
+    c.execute("""
+        DELETE FROM leads
+        WHERE id NOT IN (
+            SELECT id FROM leads
+            ORDER BY created_at DESC
+            LIMIT ?
+        )
+    """, (limit,))
 
-    # ISO norms
-    if "iso 27001" in text_lower:
-        score += 4
-    if "iso 9001" in text_lower:
-        score += 3
-    if "iso 14001" in text_lower:
-        score += 2
-
-    # urgency
-    if "maanden" in text_lower or "deadline" in text_lower:
-        score += 2
-
-    # budget
-    if "budget" in text_lower:
-        score += 2
-
-    # general compliance indicators (robustness for edge cases)
-    if "certificering" in text_lower:
-        score += 1
-    if "kwaliteit" in text_lower:
-        score += 1
-    if "aanbesteding" in text_lower:
-        score += 1
-    if "klant" in text_lower:
-        score += 1
-
-    score = min(score, 10)
-
-    if score >= 8:
-        kans = "Hoog"
-        confidence = 100
-    elif score >= 5:
-        kans = "Gemiddeld"
-        confidence = 60
-    else:
-        kans = "Laag"
-        confidence = 30
-
-    iso_norms = []
-    if "iso 27001" in text_lower:
-        iso_norms.append("ISO 27001")
-    if "iso 9001" in text_lower:
-        iso_norms.append("ISO 9001")
-    if "iso 14001" in text_lower:
-        iso_norms.append("ISO 14001")
-
-    iso_display = ", ".join(iso_norms) if iso_norms else "Niet expliciet benoemd"
-
-    return {
-        "samenvatting": f"De organisatie toont een expliciete certificeringsbehoefte. "
-                        f"Er zijn {score} volwassenheidsindicator(en) geïdentificeerd "
-                        f"en de totale leadscore bedraagt {score}/10.",
-        "iso_norm": iso_display,
-        "lead_score": score,
-        "commerciele_kans": kans,
-        "confidence": confidence,
-        "aanbevolen_actie": "Advies: plan een strategische intake en start met een gestructureerde gap-analyse."
-    }
+    conn.commit()
+    conn.close()
 
 
-# ================= ROUTES =================
+# -----------------------------
+# Routes
+# -----------------------------
 
 @app.route("/")
 def index():
@@ -110,42 +72,65 @@ def index():
 
 @app.route("/iso", methods=["POST"])
 def analyse_iso():
-    data = request.get_json()
-    text = data.get("text", "")
+    try:
+        data = request.get_json()
+        text = data.get("text", "")
 
-    result = score_lead(text)
+        if not text.strip():
+            return jsonify({"error": "Lege input"}), 400
 
-    reference_id = uuid.uuid4().hex[:8]
-    created_at = datetime.now().strftime("%Y-%m-%d %H:%M")
+        result = analyse_lead(text)
 
-    result["reference_id"] = reference_id
-    result["created_at"] = created_at
+        conn = sqlite3.connect(DB_NAME)
+        c = conn.cursor()
 
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    c.execute("""
-        INSERT INTO leads VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        reference_id,
-        created_at,
-        result["samenvatting"],
-        result["iso_norm"],
-        result["lead_score"],
-        result["commerciele_kans"],
-        result["confidence"],
-        result["aanbevolen_actie"]
-    ))
-    conn.commit()
-    conn.close()
+        # Insert with UNIQUE reference safeguard
+        c.execute("""
+            INSERT OR REPLACE INTO leads (
+                reference_id,
+                created_at,
+                iso_norm,
+                lead_score,
+                commerciele_kans,
+                confidence,
+                samenvatting,
+                aanbevolen_actie
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            result["reference_id"],
+            result["created_at"],
+            result["iso_norm"],
+            result["lead_score"],
+            result["commerciele_kans"],
+            result["confidence"],
+            result["samenvatting"],
+            result["aanbevolen_actie"]
+        ))
 
-    return jsonify(result)
+        conn.commit()
+        conn.close()
+
+        cleanup_old_leads()
+
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/leads")
 def get_leads():
-    conn = sqlite3.connect(DB_FILE)
+    conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
-    c.execute("SELECT * FROM leads ORDER BY created_at DESC LIMIT 50")
+
+    c.execute("""
+        SELECT reference_id, created_at, iso_norm,
+               lead_score, commerciele_kans, confidence
+        FROM leads
+        ORDER BY created_at DESC
+        LIMIT 100
+    """)
+
     rows = c.fetchall()
     conn.close()
 
@@ -154,57 +139,21 @@ def get_leads():
         leads.append({
             "reference_id": row[0],
             "created_at": row[1],
-            "samenvatting": row[2],
-            "iso_norm": row[3],
-            "lead_score": row[4],
-            "commerciele_kans": row[5],
-            "confidence": row[6],
-            "aanbevolen_actie": row[7]
+            "iso_norm": row[2],
+            "lead_score": row[3],
+            "commerciele_kans": row[4],
+            "confidence": row[5]
         })
 
     return jsonify(leads)
 
 
-@app.route("/download-pdf/<ref_id>")
-def download_pdf(ref_id):
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    c.execute("SELECT * FROM leads WHERE id=?", (ref_id,))
-    row = c.fetchone()
-    conn.close()
-
-    if not row:
-        return jsonify({"error": "Lead not found"}), 404
-
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer)
-    styles = getSampleStyleSheet()
-    elements = []
-
-    elements.append(Paragraph("ISO Lead Rapport", styles["Title"]))
-    elements.append(Spacer(1, 12))
-    elements.append(Paragraph(f"Referentie: {row[0]}", styles["Normal"]))
-    elements.append(Paragraph(f"Datum: {row[1]}", styles["Normal"]))
-    elements.append(Spacer(1, 12))
-    elements.append(Paragraph(f"Score: {row[4]}/10", styles["Heading2"]))
-    elements.append(Spacer(1, 12))
-    elements.append(Paragraph(f"ISO Norm(en): {row[3]}", styles["Normal"]))
-    elements.append(Paragraph(f"Commerciële Kans: {row[5]}", styles["Normal"]))
-    elements.append(Spacer(1, 12))
-    elements.append(Paragraph(f"Samenvatting: {row[2]}", styles["Normal"]))
-    elements.append(Spacer(1, 12))
-    elements.append(Paragraph(f"Aanbevolen Actie: {row[7]}", styles["Normal"]))
-
-    doc.build(elements)
-    buffer.seek(0)
-
-    return send_file(
-        buffer,
-        as_attachment=True,
-        download_name=f"ISO_Report_{ref_id}.pdf",
-        mimetype="application/pdf"
-    )
-
-
+# -----------------------------
+# Main
+# -----------------------------
 if __name__ == "__main__":
-    app.run(port=8000, debug=True)
+    host = os.environ.get("APP_HOST", "127.0.0.1")
+    port = int(os.environ.get("APP_PORT", "8000"))
+    debug = os.environ.get("APP_DEBUG", "0") in ("1", "true", "True")
+
+    app.run(host=host, port=port, debug=debug)

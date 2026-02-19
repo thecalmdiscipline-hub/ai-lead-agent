@@ -1,88 +1,93 @@
-#!/usr/bin/env python3
-# agent.py — ISO Lead Qualification Engine (DB-ready)
-
-import os
+import uuid
+from datetime import datetime
 import re
-from openai import OpenAI
 
-MODEL = "gpt-4o-mini"
+def analyse_lead(text: str):
 
-ISO_PATTERNS = {
-    "ISO 27001": r"27001",
-    "ISO 9001": r"9001",
-    "ISO 14001": r"14001",
-}
-
-def detect_iso_norms(text: str):
-    found = []
-    for iso, pattern in ISO_PATTERNS.items():
-        if re.search(pattern, text):
-            found.append(iso)
-    return found if found else ["Niet expliciet benoemd"]
-
-def score_lead(text: str):
     text_lower = text.lower()
+
+    # -----------------------
+    # ISO detectie
+    # -----------------------
+    iso_list = []
+
+    if "27001" in text_lower:
+        iso_list.append("ISO 27001")
+    if "9001" in text_lower:
+        iso_list.append("ISO 9001")
+    if "14001" in text_lower:
+        iso_list.append("ISO 14001")
+
+    iso_norm = ", ".join(sorted(iso_list)) if iso_list else "Niet expliciet benoemd"
+
+    # -----------------------
+    # Indicator scoring
+    # -----------------------
     score = 0
-    confidence = 0
 
-    # ISO genoemd
-    iso_norms = detect_iso_norms(text)
-    if iso_norms != ["Niet expliciet benoemd"]:
+    if iso_list:
         score += 3
-        confidence += 30
 
-    # Deadline
-    if any(word in text_lower for word in ["maand", "deadline", "binnen", "termijn"]):
+    if any(word in text_lower for word in ["deadline", "maand", "binnen", "spoed"]):
         score += 2
-        confidence += 20
 
-    # Grootte
-    match = re.search(r"\b(\d{2,4})\s*(medewerkers|fte|people|employees)\b", text_lower)
-    if match:
-        employees = int(match.group(1))
-        if employees >= 50:
-            score += 3
-            confidence += 30
-        elif employees >= 20:
-            score += 2
-            confidence += 20
-
-    # Budget
-    if "€" in text or "budget" in text_lower:
+    if any(word in text_lower for word in ["budget", "gereserveerd", "investering"]):
         score += 2
-        confidence += 20
 
-    score = min(score, 10)
-    confidence = min(confidence, 100)
+    if any(word in text_lower for word in ["enterprise", "aanbesteding", "verplichting"]):
+        score += 2
 
-    if score >= 8:
+    if any(word in text_lower for word in ["risicoanalyse", "interne audit", "compliance team"]):
+        score += 1
+
+    # 🔒 Minimum logica
+    if score == 0:
+        final_score = 0
+    else:
+        final_score = max(score, 3)
+
+    if final_score >= 8:
         kans = "Hoog"
-    elif score >= 5:
+    elif final_score >= 5:
         kans = "Gemiddeld"
     else:
         kans = "Laag"
 
-    return score, confidence, iso_norms, kans
+    confidence = min(final_score * 10, 100)
 
-def analyze_lead(text: str):
-    score, confidence, iso_norms, kans = score_lead(text)
+    # -----------------------
+    # Reference ID
+    # -----------------------
+    reference_id = str(uuid.uuid4())[:8]
 
-    if iso_norms == ["Niet expliciet benoemd"]:
-        summary = f"De organisatie toont een oriënterende interesse in compliance. Er zijn {score} volwassenheidsindicator(en) geïdentificeerd en de totale leadscore bedraagt {score}/10."
-    else:
-        summary = f"De organisatie toont een expliciete certificeringsbehoefte. Er zijn {score} volwassenheidsindicator(en) geïdentificeerd en de totale leadscore bedraagt {score}/10."
+    # -----------------------
+    # Samenvatting
+    # -----------------------
+    samenvatting = (
+        f"De organisatie toont een expliciete certificeringsbehoefte. "
+        f"Er zijn {final_score} volwassenheidsindicator(en) geïdentificeerd "
+        f"en de totale leadscore bedraagt {final_score}/10."
+        if final_score >= 5
+        else
+        f"De organisatie toont een oriënterende interesse in compliance. "
+        f"Er zijn {final_score} volwassenheidsindicator(en) geïdentificeerd "
+        f"en de totale leadscore bedraagt {final_score}/10."
+    )
 
-    actie = (
+    aanbevolen_actie = (
         "Advies: plan een strategische intake en start met een gestructureerde gap-analyse."
-        if score >= 8
-        else "Advies: kwalificeer verder via een oriënterend gesprek en informatieverstrekking."
+        if final_score >= 5
+        else
+        "Advies: kwalificeer verder via een oriënterend gesprek en informatieverstrekking."
     )
 
     return {
-        "lead_score": score,
-        "confidence": confidence,
-        "iso_norm": ", ".join(iso_norms),
+        "reference_id": reference_id,
+        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "iso_norm": iso_norm,
+        "lead_score": final_score,
         "commerciele_kans": kans,
-        "samenvatting": summary,
-        "aanbevolen_actie": actie,
+        "confidence": confidence,
+        "samenvatting": samenvatting,
+        "aanbevolen_actie": aanbevolen_actie
     }

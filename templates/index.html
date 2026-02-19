@@ -1,312 +1,211 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html>
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ISO Lead Qualification Agent</title>
-  <link rel="icon" href="data:,">
+  <meta charset="UTF-8">
+  <title>ISO Lead Analyse</title>
 
   <style>
-    body{
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-      background:linear-gradient(135deg,#eef2f7,#e4e9f2);
-      margin:0;
-      padding:60px 20px;
-      color:#111827;
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f4f6f9;
+      padding: 40px;
     }
-    .container{
-      max-width:980px;
-      margin:0 auto;
-      background:#fff;
-      padding:44px;
-      border-radius:18px;
-      box-shadow:0 30px 60px rgba(0,0,0,.08);
-    }
-    .top{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:18px;
-    }
-    h1{ margin:0 0 8px 0; font-weight:700; letter-spacing:-.02em; }
-    .subtitle{ color:#6b7280; margin:0 0 24px 0; }
-    textarea{
-      width:100%;
-      padding:16px;
-      border-radius:12px;
-      border:1px solid #d1d5db;
-      font-size:15px;
-      resize:vertical;
-      box-sizing:border-box;
-      outline:none;
-    }
-    textarea:focus{ border-color:#2563eb; box-shadow:0 0 0 4px rgba(37,99,235,.12); }
-    .actions{ display:flex; gap:12px; margin-top:14px; flex-wrap:wrap; }
-    button{
-      padding:14px 18px;
-      border:0;
-      border-radius:10px;
-      font-weight:700;
-      cursor:pointer;
-      transition:.2s ease;
-    }
-    .primary{ background:#2563eb; color:#fff; }
-    .primary:hover{ background:#1e40af; }
-    .secondary{ background:#111827; color:#fff; }
-    .secondary:hover{ background:#000; }
 
-    .error{ color:#dc2626; margin-top:12px; font-weight:600; }
+    .container {
+      max-width: 1100px;
+      margin: auto;
+      background: white;
+      padding: 40px;
+      border-radius: 14px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+    }
 
-    .dashboard{ display:none; margin-top:26px; }
-    .score-wrap{
-      display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap;
-      background:#f9fafb; border-radius:16px; padding:18px 18px;
-      border:1px solid #eef2f7;
+    h1 {
+      margin-bottom: 30px;
     }
-    .score{
-      font-size:64px; font-weight:800; line-height:1;
-      min-width:90px; text-align:left;
-    }
-    .badge{
-      display:inline-block;
-      padding:8px 12px;
-      border-radius:999px;
-      font-weight:800;
-      font-size:12px;
-      letter-spacing:.02em;
-      text-transform:uppercase;
-    }
-    .green{ color:#16a34a; }
-    .orange{ color:#f59e0b; }
-    .red{ color:#dc2626; }
 
-    .badge.green{ background:rgba(22,163,74,.12); color:#166534; }
-    .badge.orange{ background:rgba(245,158,11,.16); color:#92400e; }
-    .badge.red{ background:rgba(220,38,38,.12); color:#991b1b; }
+    textarea {
+      width: 100%;
+      padding: 15px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      font-size: 14px;
+      resize: vertical;
+    }
 
-    .meta{
-      display:flex; gap:18px; flex-wrap:wrap;
-      color:#374151;
-      font-weight:600;
+    button {
+      padding: 12px 24px;
+      margin-top: 20px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
     }
-    .meta div span{ color:#6b7280; font-weight:700; }
 
-    .card{
-      margin-top:18px;
-      background:#f9fafb;
-      padding:22px;
-      border-radius:16px;
-      border:1px solid #eef2f7;
-      line-height:1.6;
+    button:hover {
+      background: #1e40af;
     }
-    .row{
-      display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;
-      margin-bottom:10px;
-      color:#6b7280;
-      font-weight:700;
-    }
-    .link{
-      color:#2563eb;
-      text-decoration:none;
-      font-weight:800;
-    }
-    .link:hover{ text-decoration:underline; }
 
-    .divider{ height:1px; background:#e5e7eb; margin:18px 0; }
+    .result {
+      margin-top: 40px;
+      padding: 25px;
+      background: #f9fafb;
+      border-radius: 12px;
+    }
 
-    table{
-      width:100%;
-      border-collapse:collapse;
-      margin-top:10px;
-      font-size:14px;
+    .score {
+      font-size: 48px;
+      font-weight: bold;
     }
-    th, td{
-      padding:10px 10px;
-      border-bottom:1px solid #e5e7eb;
-      text-align:left;
-      vertical-align:top;
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 30px;
     }
-    th{ color:#6b7280; font-size:12px; text-transform:uppercase; letter-spacing:.06em; }
-    .small{ font-size:12px; color:#6b7280; font-weight:700; }
+
+    th,
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background: #f3f4f6;
+    }
+
+    .green {
+      color: #16a34a;
+      font-weight: 700;
+    }
+
+    .orange {
+      color: #f59e0b;
+      font-weight: 700;
+    }
+
+    .red {
+      color: #dc2626;
+      font-weight: 700;
+    }
   </style>
 </head>
 
 <body>
+
   <div class="container">
-    <div class="top">
-      <div>
-        <h1>ISO Lead Qualification Agent</h1>
-        <p class="subtitle">Enterprise ISO Compliance Lead Scoring Engine — demo</p>
-      </div>
-      <div class="small">
-        API: <span id="apiStatus">ready</span>
-      </div>
-    </div>
 
-    <textarea id="inputText" rows="6" placeholder="Plak hier de lead tekst..."></textarea>
+    <h1>ISO Lead Analyse</h1>
 
-    <div class="actions">
-      <button class="primary" id="btnAnalyseer">Analyseer Lead</button>
-      <button class="secondary" id="btnRefresh">Refresh Recent Leads</button>
-    </div>
+    <textarea id="inputText" rows="5" placeholder="Beschrijf hier de organisatie of lead..."></textarea>
+    <br>
+    <button onclick="analyseer()">Analyseer</button>
 
-    <div id="errorBox" class="error"></div>
+    <div id="resultBox" class="result"></div>
 
-    <div id="dashboard" class="dashboard">
-      <div class="score-wrap">
-        <div style="display:flex;align-items:center;gap:14px;">
-          <div id="scoreNumber" class="score">-</div>
-          <div>
-            <div class="small">Commerciële kans</div>
-            <div id="kansBadge" class="badge">-</div>
-          </div>
-        </div>
+    <h2>Lead Historie</h2>
 
-        <div class="meta">
-          <div><span>ISO</span><br><span id="isoValue" style="color:#111827;font-weight:800">-</span></div>
-          <div><span>Confidence</span><br><span id="confValue" style="color:#111827;font-weight:800">-</span></div>
-          <div><span>Referentie</span><br><span id="refValue" style="color:#111827;font-weight:800">-</span></div>
-          <div><span>Datum</span><br><span id="dateValue" style="color:#111827;font-weight:800">-</span></div>
-        </div>
-      </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Reference</th>
+          <th>Datum</th>
+          <th>ISO</th>
+          <th>Score</th>
+          <th>Kans</th>
+          <th>Confidence</th>
+        </tr>
+      </thead>
+      <tbody id="leadTableBody">
+      </tbody>
+    </table>
 
-      <div class="card">
-        <div class="row">
-          <div>Rapport</div>
-          <a id="pdfLink" class="link" href="#" target="_blank" rel="noopener">Download PDF</a>
-        </div>
-        <div class="divider"></div>
-
-        <div><b>Samenvatting</b></div>
-        <div id="summaryText">-</div>
-
-        <div style="margin-top:14px;"><b>Aanbevolen actie</b></div>
-        <div id="actionText">-</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="row">
-        <div>Recent Leads</div>
-        <div class="small">laatste 50</div>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th>Datum</th>
-            <th>Ref</th>
-            <th>ISO</th>
-            <th>Score</th>
-            <th>Kans</th>
-            <th>PDF</th>
-          </tr>
-        </thead>
-        <tbody id="leadsTable">
-          <tr><td colspan="6" class="small">Klik op “Refresh Recent Leads”.</td></tr>
-        </tbody>
-      </table>
-    </div>
   </div>
 
-<script>
-  let lastRef = null;
+  <script>
 
-  function scoreClass(score){
-    if(score >= 8) return "green";
-    if(score >= 5) return "orange";
-    return "red";
-  }
-
-  async function analyseer(){
-    document.getElementById("errorBox").innerText = "";
-    const text = document.getElementById("inputText").value.trim();
-    if(!text){
-      document.getElementById("errorBox").innerText = "Voer eerst een lead tekst in.";
-      return;
+    function scoreClass(score) {
+      if (score >= 8) return "green";
+      if (score >= 5) return "orange";
+      return "red";
     }
 
-    try{
-      const res = await fetch("/iso", {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ text })
-      });
-      const data = await res.json();
+    async function analyseer() {
 
-      if(!res.ok){
-        document.getElementById("errorBox").innerText = data.error || "Server fout.";
+      const text = document.getElementById("inputText").value;
+
+      if (!text.trim()) {
+        alert("Voer eerst een beschrijving in.");
         return;
       }
 
-      const a = data.analysis;
-      lastRef = a.reference_id;
+      try {
+        const response = await fetch("/iso", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: text })
+        });
 
-      const score = a.lead_score;
-      const cls = scoreClass(score);
+        const result = await response.json();
 
-      const scoreEl = document.getElementById("scoreNumber");
-      scoreEl.className = "score " + cls;
-      scoreEl.innerText = score;
+        const cls = scoreClass(result.lead_score);
 
-      const badge = document.getElementById("kansBadge");
-      badge.className = "badge " + cls;
-      badge.innerText = a.commerciele_kans;
-
-      document.getElementById("isoValue").innerText = a.iso_norm;
-      document.getElementById("confValue").innerText = a.confidence + "%";
-      document.getElementById("refValue").innerText = a.reference_id;
-      document.getElementById("dateValue").innerText = a.created_at;
-
-      document.getElementById("summaryText").innerText = a.samenvatting;
-      document.getElementById("actionText").innerText = a.aanbevolen_actie;
-
-      const link = document.getElementById("pdfLink");
-      link.href = "/download-pdf/" + encodeURIComponent(a.reference_id);
-
-      document.getElementById("dashboard").style.display = "block";
-
-      await refreshLeads();
-
-    }catch(e){
-      document.getElementById("errorBox").innerText = "Server fout opgetreden.";
-    }
-  }
-
-  async function refreshLeads(){
-    const tbody = document.getElementById("leadsTable");
-    tbody.innerHTML = "<tr><td colspan='6' class='small'>Laden...</td></tr>";
-
-    try{
-      const res = await fetch("/leads");
-      const rows = await res.json();
-
-      if(!Array.isArray(rows) || rows.length === 0){
-        tbody.innerHTML = "<tr><td colspan='6' class='small'>Nog geen leads opgeslagen.</td></tr>";
-        return;
-      }
-
-      tbody.innerHTML = "";
-      for(const r of rows){
-        const cls = scoreClass(r.lead_score);
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${r.created_at}</td>
-          <td><b>${r.reference_id}</b></td>
-          <td>${r.iso_norm}</td>
-          <td class="${cls}" style="font-weight:800">${r.lead_score}</td>
-          <td>${r.commerciele_kans}</td>
-          <td><a class="link" href="/download-pdf/${encodeURIComponent(r.reference_id)}" target="_blank" rel="noopener">PDF</a></td>
+        document.getElementById("resultBox").innerHTML = `
+            <div class="score ${cls}">${result.lead_score}/10</div>
+            <p><strong>Reference:</strong> ${result.reference_id}</p>
+            <p><strong>ISO:</strong> ${result.iso_norm}</p>
+            <p><strong>Kans:</strong> ${result.commerciele_kans}</p>
+            <p><strong>Confidence:</strong> ${result.confidence}%</p>
+            <p>${result.samenvatting}</p>
         `;
-        tbody.appendChild(tr);
-      }
-    }catch(e){
-      tbody.innerHTML = "<tr><td colspan='6' class='small'>Kon leads niet laden.</td></tr>";
-    }
-  }
 
-  document.getElementById("btnAnalyseer").addEventListener("click", analyseer);
-  document.getElementById("btnRefresh").addEventListener("click", refreshLeads);
-</script>
+        loadLeads();
+
+      } catch (error) {
+        alert("Fout bij analyse.");
+        console.error(error);
+      }
+    }
+
+    async function loadLeads() {
+
+      try {
+        const response = await fetch("/leads");
+        const leads = await response.json();
+
+        const tbody = document.getElementById("leadTableBody");
+        tbody.innerHTML = "";
+
+        leads.forEach(lead => {
+
+          const cls = scoreClass(lead.lead_score);
+
+          tbody.innerHTML += `
+                <tr>
+                    <td>${lead.reference_id || "-"}</td>
+                    <td>${lead.created_at}</td>
+                    <td>${lead.iso_norm}</td>
+                    <td class="${cls}">${lead.lead_score}</td>
+                    <td>${lead.commerciele_kans}</td>
+                    <td>${lead.confidence}%</td>
+                </tr>
+            `;
+        });
+
+      } catch (error) {
+        console.error("Fout bij laden leads", error);
+      }
+    }
+
+    window.onload = loadLeads;
+
+  </script>
 
 </body>
+
 </html>
